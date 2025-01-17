@@ -10,6 +10,27 @@ from requirements import parse_requirements
 from smt import generate_smt_expression, smt_solver
 
 
+# Import functionalities from python_version_resolver
+from python_version_resolver import load_python_versions_json, collect_python_versions, merge_constraints, filter_python_versions, get_latest_version, update_install_script
+
+def read_install_script(install_script_path):
+    """
+    Reads the generated installScript.txt file and parses package names and versions.
+    Expects each line in installScript.txt to have the format 'package==version'.
+    """
+    with open(install_script_path, 'r') as file:
+        lines = file.readlines()
+
+    # Extract package name and version from each line and return as a list of tuples
+    parsed_requirements = []
+    for line in lines:
+        if '==' in line:  # Check for 'package==version' format
+            package, version = line.strip().split('==')
+            parsed_requirements.append((package, version))
+    
+    return parsed_requirements
+
+
 def setup_logging(directory, log_file):
     """
     Setup logging configuration.
@@ -110,6 +131,30 @@ def main(directory):
                 file.write(proof)
             logging.warning(f"No solution found. Proof saved to: {proof_file}")
             print("No solution found. Check proof file for details.")
+        
+
+        # Now read the installScript.txt to get the packages and versions
+        install_script_path = os.path.join(directory, "install_script.txt")
+        parsed_install_script = read_install_script(install_script_path)
+
+        # Load Python versions from the same JSON file
+        python_versions_data = projects_data  # Since it's the same file, just reuse `projects_data`
+
+        # Collect Python versions based on package dependencies from the installScript.txt
+        python_versions = collect_python_versions(parsed_install_script)
+
+        # Merge the Python version constraints
+        merged_constraints = merge_constraints(python_versions)
+
+        # Filter compatible Python versions from JSON data
+        valid_python_versions = filter_python_versions(merged_constraints, python_versions_data)
+
+        # Get the latest Python version
+        latest_python_version = get_latest_version(valid_python_versions)
+
+        # Update the installScript.txt with the latest Python version
+        update_install_script(directory, latest_python_version)
+
 
     except Exception as e:
         logging.error(f"An error occurred: {e}")
