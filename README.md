@@ -27,7 +27,7 @@ Follow these steps to install SMTpip on your system:
 
 ```bash
 # Clone the repository
-git clone https://github.com/Sakib635/SMTpip.git
+git clone https://github.com/Sakib635/SMTpip-tool.git
 
 # Install the required dependencies
 pip install -r requirements.txt
